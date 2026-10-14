@@ -1,5 +1,6 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists postgis with schema extensions;
+create schema if not exists private;
 
 create table if not exists public.admin_users (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -23,7 +24,7 @@ create index if not exists businesses_coordinates_idx on public.businesses using
 create index if not exists businesses_status_idx on public.businesses(status);
 create index if not exists locations_parent_idx on public.locations(parent_id);
 
-create or replace function public.is_admin()
+create or replace function private.is_admin()
 returns boolean
 language sql
 security definer
@@ -38,8 +39,8 @@ as $$
   );
 $$;
 
-revoke all on function public.is_admin() from public;
-grant execute on function public.is_admin() to anon, authenticated;
+revoke all on function private.is_admin() from public;
+grant execute on function private.is_admin() to anon, authenticated;
 
 alter table public.admin_users enable row level security;
 alter table public.categories enable row level security;
@@ -49,15 +50,19 @@ alter table public.businesses enable row level security;
 alter table public.business_services enable row level security;
 alter table public.business_links enable row level security;
 alter table public.business_hours enable row level security;
+alter table public.business_reports enable row level security;
+alter table public.analytics_events enable row level security;
 
-create policy "Admins can read admin users" on public.admin_users for select using (public.is_admin());
-create policy "Admins can manage categories" on public.categories for all using (public.is_admin()) with check (public.is_admin());
-create policy "Admins can manage services" on public.services for all using (public.is_admin()) with check (public.is_admin());
-create policy "Admins can manage locations" on public.locations for all using (public.is_admin()) with check (public.is_admin());
-create policy "Admins can manage businesses" on public.businesses for all using (public.is_admin()) with check (public.is_admin());
-create policy "Admins can manage business services" on public.business_services for all using (public.is_admin()) with check (public.is_admin());
-create policy "Admins can manage business links" on public.business_links for all using (public.is_admin()) with check (public.is_admin());
-create policy "Admins can manage business hours" on public.business_hours for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can read admin users" on public.admin_users for select using (private.is_admin());
+create policy "Admins can manage categories" on public.categories for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage services" on public.services for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage locations" on public.locations for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage businesses" on public.businesses for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage business services" on public.business_services for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage business links" on public.business_links for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage business hours" on public.business_hours for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage business reports" on public.business_reports for all using (private.is_admin()) with check (private.is_admin());
+create policy "Admins can manage analytics events" on public.analytics_events for all using (private.is_admin()) with check (private.is_admin());
 
 create policy "Public can read active categories" on public.categories for select using (is_active = true);
 create policy "Public can read active services" on public.services for select using (is_active = true);

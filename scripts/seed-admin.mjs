@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "node:fs";
 import path from "node:path";
 
-const envPath = path.resolve(new URL("..", import.meta.url).pathname, ".env.local");
+const envPath = path.resolve(process.cwd(), ".env.local");
 if (fs.existsSync(envPath)) {
   for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
     if (!line || line.trim().startsWith("#") || !line.includes("=")) continue;
@@ -18,10 +18,15 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const password = process.env.ADMIN_PASSWORD;
 const email = "admin@ayoayo.ph";
 
-if (!url || !serviceRoleKey || !password) {
-  throw new Error(
-    "Set NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and ADMIN_PASSWORD before seeding the admin account.",
-  );
+const missing = [
+  ["NEXT_PUBLIC_SUPABASE_URL", url],
+  ["SUPABASE_SERVICE_ROLE_KEY", serviceRoleKey],
+  ["ADMIN_PASSWORD", password],
+]
+  .filter(([, value]) => !value)
+  .map(([name]) => name);
+if (missing.length) {
+  throw new Error(`Missing required environment variable(s): ${missing.join(", ")}`);
 }
 
 const supabase = createClient(url, serviceRoleKey, {
