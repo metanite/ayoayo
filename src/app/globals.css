@@ -94,6 +94,9 @@ select {
   .listing-favorite {
     @apply absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 text-lg leading-none text-ink shadow-sm backdrop-blur;
   }
+  .admin-input {
+    @apply mt-2 w-full rounded-xl border border-ink/15 bg-cloud px-3.5 py-2.5 text-sm font-normal text-ink outline-none transition placeholder:text-ink/35 focus:border-coral focus:bg-white focus:ring-4 focus:ring-coral/10;
+  }
 }
 
 @media (min-width: 768px) {

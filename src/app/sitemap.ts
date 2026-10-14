@@ -1,7 +1,10 @@
 import { MetadataRoute } from "next";
-import { businesses, locations, services } from "@/lib/data";
+import { getDirectoryData } from "@/lib/directory";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { businesses, locations, services } = await getDirectoryData();
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://ayoayo.ph";
   return [
     { url: base, lastModified: new Date() },

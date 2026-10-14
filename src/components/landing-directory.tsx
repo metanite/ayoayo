@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { BusinessCard } from "@/components/business-card";
-import { locations, businesses } from "@/lib/data";
+import type { Business, Location } from "@/lib/types";
 
-const municipalities = locations.filter((location) => location.slug !== "cebu");
-
-export function LandingDirectory() {
+export function LandingDirectory({ businesses, locations }: { businesses: Business[]; locations: Location[] }) {
+  const municipalities = locations.filter((location) => location.slug !== "cebu");
   const [selectedMunicipality, setSelectedMunicipality] = useState("all");
   const filteredBusinesses =
     selectedMunicipality === "all"

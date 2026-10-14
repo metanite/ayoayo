@@ -1,0 +1,140 @@
+import { businesses as demoBusinesses, categories as demoCategories, locations as demoLocations, services as demoServices } from "@/lib/data";
+import type { Business, BusinessHours, Category, Location, Service } from "@/lib/types";
+import { getSupabaseClient } from "@/lib/supabase";
+
+function first<T>(value: T | T[] | null | undefined): T | undefined {
+  return Array.isArray(value) ? value[0] : value ?? undefined;
+}
+
+function coordinates(value: unknown): { latitude: number; longitude: number } {
+  const point = value as { coordinates?: [number, number] } | null;
+  return {
+    latitude: point?.coordinates?.[1] ?? 0,
+    longitude: point?.coordinates?.[0] ?? 0,
+  };
+}
+
+function formatHours(hours: unknown): string {
+  if (typeof hours === "string") return hours;
+  if (!hours || typeof hours !== "object") return "Contact shop for hours";
+  const entries = Object.entries(hours as BusinessHours).filter(([, value]) => value);
+  if (!entries.length) return "Contact shop for hours";
+  const firstValue = entries[0][1];
+  if (entries.every(([, value]) => value === firstValue)) return `Every day · ${firstValue}`;
+  return entries.map(([day, value]) => `${day} · ${value}`).join(" · ");
+}
+
+function mapBusiness(row: any): Business {
+  const location = first(row.locations);
+  const linkedServices = (row.business_services ?? [])
+    .map((item: any) => ({ id: item.service_id, service: first(item.services) }))
+    .filter((item: any) => item.service?.slug);
+  const point = coordinates(row.coordinates);
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    tagline: row.tagline ?? "",
+    description: row.description ?? "",
+    locationSlug: location?.slug ?? "cebu",
+    locationName: location?.name,
+    barangay: row.barangay ?? "",
+    address: row.address,
+    phone: row.phone ?? "",
+    website: row.website ?? undefined,
+    facebook: row.facebook ?? undefined,
+    instagram: row.instagram ?? undefined,
+    hours: formatHours(row.hours),
+    latitude: point.latitude,
+    longitude: point.longitude,
+    serviceSlugs: linkedServices.map((item: any) => item.service.slug),
+    serviceNames: Object.fromEntries(
+      linkedServices.map((item: any) => [item.service.slug, item.service.name]),
+    ),
+    verified: Boolean(row.verified),
+    featured: Boolean(row.featured),
+    updatedAt: row.updated_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+  };
+}
+
+export type DirectoryData = {
+  categories: Category[];
+  services: Service[];
+  locations: Location[];
+  businesses: Business[];
+};
+
+export async function getDirectoryData(): Promise<DirectoryData> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      categories: demoCategories,
+      services: demoServices,
+      locations: demoLocations,
+      businesses: demoBusinesses,
+    };
+  }
+
+  const [categoryResult, serviceResult, locationResult, businessResult] = await Promise.all([
+    client.from("categories").select("id, name, slug, description").eq("is_active", true).order("sort_order"),
+    client.from("services").select("id, category_id, name, slug, description, keywords").eq("is_active", true).order("name"),
+    client.from("locations").select("id, parent_id, name, slug, type, description, coordinates").eq("is_active", true).order("name"),
+    client
+      .from("businesses")
+      .select("*, locations(slug, name), business_services(service_id, services(slug, name))")
+      .eq("status", "published")
+      .order("featured", { ascending: false })
+      .order("name"),
+  ]);
+
+  if (categoryResult.error || serviceResult.error || locationResult.error || businessResult.error) {
+    return {
+      categories: demoCategories,
+      services: demoServices,
+      locations: demoLocations,
+      businesses: demoBusinesses,
+    };
+  }
+
+  const locationRows = locationResult.data ?? [];
+  const locationById = new Map(locationRows.map((item: any) => [item.id, item.slug]));
+  const serviceRows = serviceResult.data ?? [];
+  const services: Service[] = serviceRows.map((item: any) => ({
+    id: item.id,
+    categoryId: item.category_id,
+    name: item.name,
+    slug: item.slug,
+    icon: "all",
+    description: item.description ?? "",
+    keywords: item.keywords ?? [],
+  }));
+  const locations: Location[] = locationRows.map((item: any) => ({
+    slug: item.slug,
+    name: item.name,
+    type: item.type,
+    parentSlug: item.parent_id ? locationById.get(item.parent_id) : undefined,
+    description: item.description ?? "",
+    ...coordinates(item.coordinates),
+  }));
+  const categories: Category[] = (categoryResult.data ?? []).map((item: any) => ({
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    description: item.description ?? "",
+  }));
+
+  return {
+    categories,
+    services,
+    locations,
+    businesses: (businessResult.data ?? []).map(mapBusiness),
+  };
+}
+
+export function findService(data: DirectoryData, slug: string) {
+  return data.services.find((service) => service.slug === slug);
+}
+
+export function findLocation(data: DirectoryData, slug: string) {
+  return data.locations.find((location) => location.slug === slug);
+}

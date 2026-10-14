@@ -27,7 +27,7 @@ export function SiteHeader() {
           </a>
         </nav>
         <Link href="/search" className="button-dark hidden px-4 py-2 sm:inline-flex">
-          Explore directory <span aria-hidden>↗</span>
+          Find Shops <span aria-hidden>↗</span>
         </Link>
       </div>
     </header>

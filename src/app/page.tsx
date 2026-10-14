@@ -3,11 +3,14 @@ import { LandingDirectory } from "@/components/landing-directory";
 import { SearchForm } from "@/components/search-form";
 import { ServiceIcon } from "@/components/service-icon";
 import { SectionHeading } from "@/components/section-heading";
-import { categories, services } from "@/lib/data";
+import { getDirectoryData } from "@/lib/directory";
 
 const categoryIcons = ["⌘", "◌", "▣"];
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const { categories, services, locations, businesses } = await getDirectoryData();
   return (
     <main>
       <section className="hero-section border-b border-ink/10">
@@ -39,7 +42,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <LandingDirectory />
+      <LandingDirectory businesses={businesses} locations={locations} />
 
       <section className="container-shell py-10 sm:py-12">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">

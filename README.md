@@ -11,7 +11,7 @@ The public MVP includes:
 - Responsive listing cards with service-specific placeholder images
 - Metadata, canonical URLs, sitemap, and robots rules
 
-The current UI uses demo listings from `src/lib/data.ts`. Supabase schema definitions are available in `supabase/schema.sql` for a future database integration.
+The UI uses Supabase listings when the Supabase environment variables are configured, and falls back to the starter listings in `src/lib/data.ts` for local UI work. The admin dashboard is available at `/admin` and is intentionally not linked from the public site.
 
 ## Run locally
 
@@ -25,6 +25,16 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SITE_URL` when running the site with a custom or production URL.
+
+## Admin dashboard
+
+Apply `supabase/schema.sql`, set the public Supabase URL/publishable key plus a server-only `SUPABASE_SERVICE_ROLE_KEY`, then seed the administrator with:
+
+```bash
+ADMIN_PASSWORD='use-a-strong-password' pnpm db:seed-admin
+```
+
+This creates or updates the `admin@ayoayo.ph` Supabase Auth user and its `admin_users` record. Sign in at `/admin`; no public navigation link is provided. The dashboard supports adding, editing, publishing, unpublishing, flagging, featuring, verifying, and removing shops, including contacts, social links, services, hours, coordinates, and all listing text.
 
 ## Useful commands
 

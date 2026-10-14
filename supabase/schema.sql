@@ -1,6 +1,14 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists postgis with schema extensions;
 
+create table if not exists public.admin_users (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null unique,
+  name text not null default 'Administrator',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.categories (id uuid primary key default uuid_generate_v4(), name text not null, slug text not null unique, description text, sort_order integer not null default 0, is_active boolean not null default true, created_at timestamptz not null default now());
 create table if not exists public.services (id uuid primary key default uuid_generate_v4(), category_id uuid not null references public.categories(id) on delete restrict, name text not null, slug text not null unique, description text, keywords text[] not null default '{}', is_active boolean not null default true, created_at timestamptz not null default now());
 create table if not exists public.locations (id uuid primary key default uuid_generate_v4(), parent_id uuid references public.locations(id) on delete restrict, name text not null, slug text not null unique, type text not null check (type in ('province', 'city', 'municipality', 'barangay')), description text, coordinates extensions.geography(point, 4326), is_active boolean not null default true, created_at timestamptz not null default now());
@@ -15,12 +23,41 @@ create index if not exists businesses_coordinates_idx on public.businesses using
 create index if not exists businesses_status_idx on public.businesses(status);
 create index if not exists locations_parent_idx on public.locations(parent_id);
 
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.admin_users
+    where lower(email) = lower(auth.jwt() ->> 'email')
+      and is_active = true
+  );
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
+
+alter table public.admin_users enable row level security;
 alter table public.categories enable row level security;
 alter table public.services enable row level security;
 alter table public.locations enable row level security;
 alter table public.businesses enable row level security;
 alter table public.business_services enable row level security;
 alter table public.business_links enable row level security;
+alter table public.business_hours enable row level security;
+
+create policy "Admins can read admin users" on public.admin_users for select using (public.is_admin());
+create policy "Admins can manage categories" on public.categories for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage services" on public.services for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage locations" on public.locations for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage businesses" on public.businesses for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage business services" on public.business_services for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage business links" on public.business_links for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage business hours" on public.business_hours for all using (public.is_admin()) with check (public.is_admin());
 
 create policy "Public can read active categories" on public.categories for select using (is_active = true);
 create policy "Public can read active services" on public.services for select using (is_active = true);
@@ -28,3 +65,12 @@ create policy "Public can read active locations" on public.locations for select 
 create policy "Public can read published businesses" on public.businesses for select using (status = 'published');
 create policy "Public can read published business services" on public.business_services for select using (exists (select 1 from public.businesses where businesses.id = business_id and businesses.status = 'published'));
 create policy "Public can read published business links" on public.business_links for select using (exists (select 1 from public.businesses where businesses.id = business_id and businesses.status = 'published'));
+
+-- The Auth user itself is created by scripts/seed-admin.mjs because passwords must
+-- be handled by Supabase Auth. This row grants that user directory-admin access.
+insert into public.admin_users (id, email, name)
+select id, 'admin@ayoayo.ph', 'ayoayo Administrator'
+from auth.users
+where lower(email) = 'admin@ayoayo.ph'
+on conflict (email) do update
+set id = excluded.id, name = excluded.name, is_active = true;

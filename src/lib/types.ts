@@ -57,4 +57,10 @@ export type Business = {
   verified: boolean;
   featured?: boolean;
   updatedAt: string;
+  locationName?: string;
+  serviceNames?: Record<string, string>;
 };
+
+export type BusinessStatus = "draft" | "published" | "unpublished" | "flagged";
+
+export type BusinessHours = Record<string, string>;

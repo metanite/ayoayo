@@ -2,26 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BusinessCard } from "@/components/business-card";
-import {
-  getBusinessesFor,
-  getCategory,
-  getLocation,
-  getService,
-  locations,
-  services,
-} from "@/lib/data";
+import { findLocation, findService, getDirectoryData } from "@/lib/directory";
 
 type LandingPageProps = { params: { location: string; service: string } };
 
-export function generateStaticParams() {
-  return locations.flatMap((location) =>
-    services.slice(0, 8).map((service) => ({ location: location.slug, service: service.slug })),
-  );
-}
+export const dynamic = "force-dynamic";
 
-export function generateMetadata({ params }: LandingPageProps): Metadata {
-  const service = getService(params.service);
-  const location = getLocation(params.location);
+export async function generateMetadata({ params }: LandingPageProps): Promise<Metadata> {
+  const data = await getDirectoryData();
+  const service = findService(data, params.service);
+  const location = findLocation(data, params.location);
   if (!service || !location) return {};
   const title = `${service.name} in ${location.name}`;
   return {
@@ -32,14 +22,19 @@ export function generateMetadata({ params }: LandingPageProps): Metadata {
   };
 }
 
-export default function ServiceLocationPage({ params }: LandingPageProps) {
-  const service = getService(params.service);
-  const location = getLocation(params.location);
+export default async function ServiceLocationPage({ params }: LandingPageProps) {
+  const data = await getDirectoryData();
+  const service = findService(data, params.service);
+  const location = findLocation(data, params.location);
   if (!service || !location) notFound();
 
-  const results = getBusinessesFor(service.slug, location.slug);
-  const category = getCategory(service.categoryId);
-  const nearby = locations
+  const results = data.businesses.filter(
+    (business) =>
+      business.serviceSlugs.includes(service.slug) &&
+      (location.slug === "cebu" || business.locationSlug === location.slug),
+  );
+  const category = data.categories.find((item) => item.id === service.categoryId);
+  const nearby = data.locations
     .filter((item) => item.slug !== location.slug && item.slug !== "cebu")
     .slice(0, 4);
   const structuredData = {

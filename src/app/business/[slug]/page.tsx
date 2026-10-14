@@ -3,24 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BusinessCard } from "@/components/business-card";
 import { ServiceIcon } from "@/components/service-icon";
-import {
-  businesses,
-  formatDate,
-  getBusiness,
-  getBusinessesFor,
-  getLocation,
-  getService,
-} from "@/lib/data";
+import { formatDate } from "@/lib/data";
+import { findLocation, findService, getDirectoryData } from "@/lib/directory";
 
 type BusinessPageProps = { params: { slug: string } };
 
-export function generateStaticParams() {
-  return businesses.map((business) => ({ slug: business.slug }));
-}
-export function generateMetadata({ params }: BusinessPageProps): Metadata {
-  const business = getBusiness(params.slug);
+export const dynamic = "force-dynamic";
+export async function generateMetadata({ params }: BusinessPageProps): Promise<Metadata> {
+  const data = await getDirectoryData();
+  const business = data.businesses.find((item) => item.slug === params.slug);
   if (!business) return {};
-  const location = getLocation(business.locationSlug);
+  const location = findLocation(data, business.locationSlug);
   return {
     title: `${business.name} — ${location?.name ?? "Cebu"}`,
     description: business.description,
@@ -28,11 +21,17 @@ export function generateMetadata({ params }: BusinessPageProps): Metadata {
   };
 }
 
-export default function BusinessPage({ params }: BusinessPageProps) {
-  const business = getBusiness(params.slug);
+export default async function BusinessPage({ params }: BusinessPageProps) {
+  const data = await getDirectoryData();
+  const business = data.businesses.find((item) => item.slug === params.slug);
   if (!business) notFound();
-  const location = getLocation(business.locationSlug);
-  const related = getBusinessesFor(business.serviceSlugs[0], business.locationSlug)
+  const location = findLocation(data, business.locationSlug);
+  const related = data.businesses
+    .filter(
+      (item) =>
+        item.serviceSlugs.includes(business.serviceSlugs[0]) &&
+        item.locationSlug === business.locationSlug,
+    )
     .filter((item) => item.id !== business.id)
     .slice(0, 2);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${business.address}, Cebu, Philippines`)}`;
@@ -87,7 +86,7 @@ export default function BusinessPage({ params }: BusinessPageProps) {
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {business.serviceSlugs.map((slug) => {
-              const service = getService(slug);
+              const service = findService(data, slug);
               return (
                 <Link
                   href={`/${business.locationSlug}/${slug}`}

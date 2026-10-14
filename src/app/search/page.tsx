@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BusinessCard } from "@/components/business-card";
 import { SearchForm } from "@/components/search-form";
 import { ServiceIcon } from "@/components/service-icon";
-import { getLocation, getService, locations, searchBusinesses, services } from "@/lib/data";
+import { findLocation, findService, getDirectoryData } from "@/lib/directory";
 
 type SearchPageProps = { searchParams: { service?: string; location?: string } };
 
@@ -12,10 +12,17 @@ export const metadata = {
   alternates: { canonical: "/search" },
 };
 
-export default function SearchPage({ searchParams }: SearchPageProps) {
-  const results = searchBusinesses(searchParams);
-  const service = searchParams.service ? getService(searchParams.service) : undefined;
-  const location = searchParams.location ? getLocation(searchParams.location) : undefined;
+export const dynamic = "force-dynamic";
+
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const data = await getDirectoryData();
+  const results = data.businesses.filter(
+    (business) =>
+      (!searchParams.service || business.serviceSlugs.includes(searchParams.service)) &&
+      (!searchParams.location || searchParams.location === "cebu" || business.locationSlug === searchParams.location),
+  );
+  const service = searchParams.service ? findService(data, searchParams.service) : undefined;
+  const location = searchParams.location ? findLocation(data, searchParams.location) : undefined;
   const title =
     service && location
       ? `${service.name} in ${location.name}`
@@ -80,7 +87,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
         <div className="mt-10 rounded-2xl border border-ink/10 bg-white p-5 sm:p-6">
           <p className="eyebrow">Browse popular services</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {services.slice(0, 8).map((item) => (
+            {data.services.slice(0, 8).map((item) => (
               <Link
                 key={item.slug}
                 href={`/cebu/${item.slug}`}
@@ -94,7 +101,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
           <p className="mt-6 text-xs leading-6 text-ink/45">
             Choose a service and municipality above to find matching repair shops. Available
             municipalities include{" "}
-            {locations
+            {data.locations
               .filter((item) => item.type === "municipality")
               .map((item) => item.name)
               .join(", ")}

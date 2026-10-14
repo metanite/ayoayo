@@ -45,6 +45,7 @@ function getFallbackImage(serviceSlugs: string[]) {
 
 export function BusinessCard({ business }: { business: Business }) {
   const location = getLocation(business.locationSlug);
+  const locationName = business.locationName ?? location?.name;
   return (
     <article className="listing-card group">
       <Link href={`/business/${business.slug}`} aria-label={`View ${business.name}`}>
@@ -72,7 +73,7 @@ export function BusinessCard({ business }: { business: Business }) {
         <div className="mb-3 flex items-start justify-between gap-4">
           <div>
             <p className="mb-1 text-[13px] font-medium text-ink/50">
-              {location?.name} · {business.barangay}
+              {locationName} · {business.barangay}
             </p>
             <h3 className="text-lg font-semibold tracking-[-0.03em] text-ink sm:text-xl">
               <Link
@@ -98,6 +99,7 @@ export function BusinessCard({ business }: { business: Business }) {
         <div className="mb-4 flex flex-wrap gap-2">
           {business.serviceSlugs.slice(0, 3).map((slug) => {
             const service = getService(slug);
+            const serviceName = business.serviceNames?.[slug] ?? service?.name;
             return (
               <span
                 key={slug}
@@ -106,7 +108,7 @@ export function BusinessCard({ business }: { business: Business }) {
                 {service && (
                   <ServiceIcon name={service.icon} className="h-3.5 w-3.5 text-forest/70" />
                 )}
-                {service?.name}
+                {serviceName}
               </span>
             );
           })}
