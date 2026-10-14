@@ -1,9 +1,25 @@
 import { locations, services } from "@/lib/data";
+import { PickerOption, ServicePicker } from "@/components/service-picker";
 
 type SearchFormProps = {
   compact?: boolean;
   defaultValues?: { service?: string; location?: string };
 };
+
+const serviceOptions: PickerOption[] = services.map((service) => ({
+  name: service.name,
+  slug: service.slug,
+  icon: service.icon,
+  description: service.description,
+}));
+
+const locationOptions: PickerOption[] = locations
+  .filter((location) => location.slug !== "cebu")
+  .map((location) => ({
+    name: location.name,
+    slug: location.slug,
+    icon: "location",
+  }));
 
 export function SearchForm({ compact = false, defaultValues = {} }: SearchFormProps) {
   return (
@@ -13,38 +29,45 @@ export function SearchForm({ compact = false, defaultValues = {} }: SearchFormPr
     >
       <div className="search-field">
         <label htmlFor={compact ? "compact-service" : "service"}>Service</label>
-        <select
+        <ServicePicker
           id={compact ? "compact-service" : "service"}
           name="service"
-          defaultValue={defaultValues.service ?? ""}
-        >
-          <option value="">All services</option>
-          {services.map((service) => (
-            <option key={service.slug} value={service.slug}>
-              {service.name}
-            </option>
-          ))}
-        </select>
+          ariaLabel="Choose a service"
+          defaultValue={defaultValues.service}
+          options={serviceOptions}
+          allLabel="All services"
+          allIcon="all"
+        />
       </div>
       <div className="search-field">
         <label htmlFor={compact ? "compact-location" : "location"}>Municipality</label>
-        <select
+        <ServicePicker
           id={compact ? "compact-location" : "location"}
           name="location"
+          ariaLabel="Choose a municipality"
           defaultValue={defaultValues.location ?? ""}
-        >
-          <option value="">All municipalities</option>
-          {locations
-            .filter((location) => location.slug !== "cebu")
-            .map((location) => (
-              <option key={location.slug} value={location.slug}>
-                {location.name}
-              </option>
-            ))}
-        </select>
+          options={locationOptions}
+          allLabel="All municipalities"
+          allIcon="location"
+        />
       </div>
       <button type="submit" className="button-lime search-submit">
-        Search <span aria-hidden>→</span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15">
+          <svg
+            aria-hidden="true"
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="m16 16 4.5 4.5" />
+          </svg>
+        </span>
+        <span>Search</span>
       </button>
     </form>
   );

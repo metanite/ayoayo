@@ -1,10 +1,27 @@
 export type Category = { id: string; name: string; slug: string; description: string };
 
+export type ServiceIconName =
+  | "laptop"
+  | "desktop"
+  | "gaming"
+  | "macbook"
+  | "data"
+  | "iphone"
+  | "android"
+  | "tablet"
+  | "printer"
+  | "cctv"
+  | "console"
+  | "network"
+  | "all"
+  | "location";
+
 export type Service = {
   id: string;
   categoryId: string;
   name: string;
   slug: string;
+  icon: ServiceIconName;
   description: string;
   keywords: string[];
 };

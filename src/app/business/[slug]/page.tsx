@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BusinessCard } from "@/components/business-card";
+import { ServiceIcon } from "@/components/service-icon";
 import {
   businesses,
   formatDate,
@@ -38,7 +39,7 @@ export default function BusinessPage({ params }: BusinessPageProps) {
 
   return (
     <main>
-      <section className="border-b border-ink/10 bg-white">
+      <section className="hero-section border-b border-ink/10">
         <div className="container-shell py-10 sm:py-12">
           <nav className="mb-6 text-sm text-ink/50">
             <Link href="/" className="hover:text-coral">
@@ -91,8 +92,11 @@ export default function BusinessPage({ params }: BusinessPageProps) {
                 <Link
                   href={`/${business.locationSlug}/${slug}`}
                   key={slug}
-                  className="rounded-full bg-cloud px-3.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-lime hover:text-ink"
+                  className="inline-flex items-center gap-2 rounded-full bg-cloud px-3.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-lime hover:text-ink"
                 >
+                  {service && (
+                    <ServiceIcon name={service.icon} className="h-4 w-4 text-forest/70" />
+                  )}
                   {service?.name}
                 </Link>
               );

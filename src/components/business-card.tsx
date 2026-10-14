@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getLocation, getService } from "@/lib/data";
+import { ServiceIcon } from "@/components/service-icon";
 import { Business } from "@/lib/types";
 
 const mobileServices = new Set(["iphone-repair", "android-repair", "tablet-repair"]);
@@ -95,14 +96,20 @@ export function BusinessCard({ business }: { business: Business }) {
           {business.tagline}
         </p>
         <div className="mb-4 flex flex-wrap gap-2">
-          {business.serviceSlugs.slice(0, 3).map((slug) => (
-            <span
-              key={slug}
-              className="rounded-full bg-cloud px-2.5 py-1 text-[13px] font-medium text-ink/70"
-            >
-              {getService(slug)?.name}
-            </span>
-          ))}
+          {business.serviceSlugs.slice(0, 3).map((slug) => {
+            const service = getService(slug);
+            return (
+              <span
+                key={slug}
+                className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-[13px] font-medium text-ink/70"
+              >
+                {service && (
+                  <ServiceIcon name={service.icon} className="h-3.5 w-3.5 text-forest/70" />
+                )}
+                {service?.name}
+              </span>
+            );
+          })}
           {business.serviceSlugs.length > 3 && (
             <span className="rounded-full bg-cloud px-2.5 py-1 text-[13px] font-medium text-ink/70">
               +{business.serviceSlugs.length - 3}

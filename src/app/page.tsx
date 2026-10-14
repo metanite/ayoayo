@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LandingDirectory } from "@/components/landing-directory";
 import { SearchForm } from "@/components/search-form";
+import { ServiceIcon } from "@/components/service-icon";
 import { SectionHeading } from "@/components/section-heading";
 import { categories, services } from "@/lib/data";
 
@@ -9,10 +10,10 @@ const categoryIcons = ["⌘", "◌", "▣"];
 export default function HomePage() {
   return (
     <main>
-      <section className="border-b border-ink/10 bg-white">
-        <div className="container-shell py-10 sm:py-14">
+      <section className="hero-section border-b border-ink/10">
+        <div className="container-shell py-6 sm:py-14">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="mt-3 text-4xl font-bold leading-[1.05] tracking-[-0.06em] text-ink sm:text-5xl">
+            <h1 className="text-4xl font-bold leading-[1.05] tracking-[-0.06em] text-ink sm:text-5xl">
               Find tech repair shops in Cebu
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/60">
@@ -28,8 +29,9 @@ export default function HomePage() {
               <Link
                 key={service.slug}
                 href={`/cebu/${service.slug}`}
-                className="transition-colors hover:text-coral"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-coral"
               >
+                <ServiceIcon name={service.icon} className="h-3.5 w-3.5 text-forest/70" />
                 {service.name}
               </Link>
             ))}
@@ -74,8 +76,9 @@ export default function HomePage() {
                     <Link
                       href={`/cebu/${service.slug}`}
                       key={service.slug}
-                      className="rounded-full bg-cloud px-3 py-1.5 text-xs font-medium text-ink/70 transition hover:bg-lime hover:text-ink"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-3 py-1.5 text-xs font-medium text-ink/70 transition hover:bg-lime hover:text-ink"
                     >
+                      <ServiceIcon name={service.icon} className="h-3.5 w-3.5 text-forest/70" />
                       {service.name}
                     </Link>
                   ))}

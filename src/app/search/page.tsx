@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BusinessCard } from "@/components/business-card";
 import { SearchForm } from "@/components/search-form";
+import { ServiceIcon } from "@/components/service-icon";
 import { getLocation, getService, locations, searchBusinesses, services } from "@/lib/data";
 
 type SearchPageProps = { searchParams: { service?: string; location?: string } };
@@ -26,7 +27,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <main className="min-h-[70vh]">
-      <section className="border-b border-ink/10 bg-white">
+      <section className="hero-section border-b border-ink/10">
         <div className="container-shell py-10 sm:py-14">
           <p className="eyebrow">Explore the directory</p>
           <h1 className="mt-3 max-w-2xl text-4xl font-bold tracking-[-0.06em] text-ink sm:text-5xl">
@@ -83,8 +84,9 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
               <Link
                 key={item.slug}
                 href={`/cebu/${item.slug}`}
-                className="rounded-full border border-ink/10 bg-cloud px-4 py-2 text-sm font-medium text-ink/70 transition hover:border-lime hover:bg-lime hover:text-ink"
+                className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-cloud px-4 py-2 text-sm font-medium text-ink/70 transition hover:border-lime hover:bg-lime hover:text-ink"
               >
+                <ServiceIcon name={item.icon} className="h-4 w-4 text-forest/70" />
                 {item.name}
               </Link>
             ))}

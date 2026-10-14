@@ -61,7 +61,7 @@ export default function ServiceLocationPage({ params }: LandingPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <section className="border-b border-ink/10 bg-white">
+      <section className="hero-section border-b border-ink/10">
         <div className="container-shell py-10 sm:py-12">
           <nav className="mb-6 text-sm text-ink/50">
             <Link href="/" className="hover:text-coral">
