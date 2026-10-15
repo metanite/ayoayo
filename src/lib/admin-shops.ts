@@ -1,4 +1,5 @@
 import type { BusinessHours, BusinessStatus } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ShopPayload = {
   slug: string;
@@ -23,6 +24,21 @@ export type ShopPayload = {
 };
 
 const statuses = new Set<BusinessStatus>(["draft", "published", "unpublished", "flagged"]);
+
+export async function resolveLocationId(client: SupabaseClient, value: string) {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+    return { id: value };
+  }
+
+  const { data, error } = await client
+    .from("locations")
+    .select("id")
+    .eq("slug", value.trim().toLowerCase())
+    .maybeSingle();
+  if (error) return { error: "Unable to validate the selected location." };
+  if (!data) return { error: "Please select a valid Cebu city or municipality." };
+  return { id: data.id };
+}
 
 export function validateShopPayload(input: unknown): { data?: ShopPayload; error?: string } {
   if (!input || typeof input !== "object") return { error: "Invalid shop payload." };

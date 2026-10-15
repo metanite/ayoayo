@@ -22,9 +22,11 @@ export function LocationShopResults({
   const areaOptions = useMemo(
     () =>
       getSupportedSearchLocations(locations).filter(
-        (location) => location.slug !== SUPPORTED_LOCATION_ROOT,
+        (location) =>
+          location.slug !== SUPPORTED_LOCATION_ROOT &&
+          businesses.some((business) => business.locationSlug === location.slug),
       ),
-    [locations],
+    [businesses, locations],
   );
   const filteredBusinesses =
     !showAreaFilters || selectedLocation === SUPPORTED_LOCATION_ROOT

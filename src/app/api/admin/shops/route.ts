@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminContext } from "@/lib/admin";
-import { shopRow, validateShopPayload } from "@/lib/admin-shops";
+import { resolveLocationId, shopRow, validateShopPayload } from "@/lib/admin-shops";
 import { REMOVED_SERVICE_SLUGS } from "@/lib/directory";
 
 function unauthorized() {
@@ -54,10 +54,15 @@ export async function POST(request: Request) {
   if (validation.error || !validation.data) {
     return NextResponse.json({ error: validation.error ?? "Invalid shop." }, { status: 400 });
   }
+  const location = await resolveLocationId(context.client, validation.data.locationId);
+  if (location.error || !location.id) {
+    return NextResponse.json({ error: location.error ?? "Invalid location." }, { status: 400 });
+  }
+  const payload = { ...validation.data, locationId: location.id };
 
   const { data: shop, error } = await context.client
     .from("businesses")
-    .insert(shopRow(validation.data))
+    .insert(shopRow(payload))
     .select("id")
     .single();
   if (error || !shop)
@@ -66,9 +71,9 @@ export async function POST(request: Request) {
       { status: 400 },
     );
 
-  if (validation.data.serviceIds.length) {
+  if (payload.serviceIds.length) {
     const { error: serviceError } = await context.client.from("business_services").insert(
-      validation.data.serviceIds.map((serviceId) => ({
+      payload.serviceIds.map((serviceId) => ({
         business_id: shop.id,
         service_id: serviceId,
       })),
@@ -77,7 +82,7 @@ export async function POST(request: Request) {
   }
   const { error: hoursError } = await context.client
     .from("business_hours")
-    .upsert({ business_id: shop.id, hours: validation.data.hours });
+    .upsert({ business_id: shop.id, hours: payload.hours });
   if (hoursError) return NextResponse.json({ error: hoursError.message }, { status: 400 });
   return NextResponse.json({ id: shop.id }, { status: 201 });
 }

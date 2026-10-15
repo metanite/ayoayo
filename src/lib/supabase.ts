@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+const noStoreFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: "no-store" });
+
 export function getSupabaseClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
@@ -7,6 +9,7 @@ export function getSupabaseClient(): SupabaseClient | null {
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: noStoreFetch },
   });
 }
 
@@ -17,6 +20,9 @@ export function getAuthorizedSupabaseClient(accessToken: string): SupabaseClient
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    global: {
+      fetch: noStoreFetch,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
   });
 }

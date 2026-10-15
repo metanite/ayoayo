@@ -76,6 +76,23 @@ export type DirectoryData = {
   businesses: Business[];
 };
 
+function logDirectoryErrors(
+  results: Array<{
+    name: string;
+    error: { code?: string; message: string; hint?: string | null } | null;
+  }>,
+) {
+  const failures = results
+    .filter((result) => result.error)
+    .map(({ name, error }) => ({
+      table: name,
+      code: error?.code,
+      message: error?.message,
+      hint: error?.hint,
+    }));
+  if (failures.length) console.error("[directory] Supabase read failed", failures);
+}
+
 export async function getDirectoryData(): Promise<DirectoryData> {
   const client = getSupabaseClient();
   if (!client) {
@@ -111,14 +128,12 @@ export async function getDirectoryData(): Promise<DirectoryData> {
       .order("name"),
   ]);
 
-  if (categoryResult.error || serviceResult.error || locationResult.error || businessResult.error) {
-    return {
-      categories: demoCategories,
-      services: demoServices.filter((service) => !REMOVED_SERVICE_SLUGS.has(service.slug)),
-      locations: demoLocations,
-      businesses: demoBusinesses,
-    };
-  }
+  logDirectoryErrors([
+    { name: "categories", error: categoryResult.error },
+    { name: "services", error: serviceResult.error },
+    { name: "locations", error: locationResult.error },
+    { name: "businesses", error: businessResult.error },
+  ]);
 
   const locationRows = locationResult.data ?? [];
   const locationById = new Map(locationRows.map((item: any) => [item.id, item.slug]));
@@ -134,26 +149,36 @@ export async function getDirectoryData(): Promise<DirectoryData> {
       description: item.description ?? "",
       keywords: item.keywords ?? [],
     }));
-  const locations: Location[] = locationRows.map((item: any) => ({
-    slug: item.slug,
-    name: item.name,
-    type: item.type,
-    parentSlug: item.parent_id ? locationById.get(item.parent_id) : undefined,
-    description: item.description ?? "",
-    ...coordinates(item.coordinates),
-  }));
-  const categories: Category[] = (categoryResult.data ?? []).map((item: any) => ({
-    id: item.id,
-    name: item.name,
-    slug: item.slug,
-    description: item.description ?? "",
-  }));
+  const locations: Location[] = locationResult.error
+    ? demoLocations
+    : locationRows.map((item: any) => ({
+        slug: item.slug,
+        name: item.name,
+        type: item.type,
+        parentSlug: item.parent_id ? locationById.get(item.parent_id) : undefined,
+        description: item.description ?? "",
+        ...coordinates(item.coordinates),
+      }));
+  const categories: Category[] = categoryResult.error
+    ? demoCategories
+    : (categoryResult.data ?? []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        slug: item.slug,
+        description: item.description ?? "",
+      }));
+
+  const businesses = businessResult.error
+    ? demoBusinesses
+    : (businessResult.data ?? []).map(mapBusiness);
 
   return {
     categories,
-    services,
+    services: serviceResult.error
+      ? demoServices.filter((service) => !REMOVED_SERVICE_SLUGS.has(service.slug))
+      : services,
     locations,
-    businesses: (businessResult.data ?? []).map(mapBusiness),
+    businesses,
   };
 }
 
