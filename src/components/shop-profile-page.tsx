@@ -98,7 +98,7 @@ export async function ShopProfilePage({ shopSlug, locationSlug }: ShopProfilePro
   return (
     <main>
       <section className="hero-section border-b border-ink/10">
-        <div className="container-shell py-4 sm:py-7">
+        <div className="container-shell py-2 sm:py-7">
           <nav className="mb-4 text-xs text-ink/50 sm:text-sm">
             <Link href="/" className="hover:text-coral">
               Home
@@ -125,14 +125,14 @@ export async function ShopProfilePage({ shopSlug, locationSlug }: ShopProfilePro
                 {keywords.slice(1, 6).join(" · ")}
               </p>
             </div>
-            <div className="flex w-full shrink-0 flex-col gap-3 md:w-[26rem] md:flex-row-reverse">
-              <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-ink/10 bg-cloud shadow-soft sm:h-64">
+            <div className="flex w-full shrink-0 flex-col gap-3 md:w-[23rem] md:flex-row-reverse">
+              <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-ink/10 bg-cloud shadow-soft sm:h-56">
                 <Image
                   src={business.image ?? "/brand/repair-shop-placeholder.svg"}
                   alt={`${business.name} shop`}
                   fill
                   unoptimized
-                  sizes="(max-width: 767px) 100vw, 416px"
+                  sizes="(max-width: 767px) 100vw, 368px"
                   className="object-cover"
                 />
               </div>
