@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Route } from "next";
 import { getLocation, getService } from "@/lib/data";
 import { ServiceIcon } from "@/components/service-icon";
 import { Business } from "@/lib/types";
+import { shopPath } from "@/lib/urls";
 
 const mobileServices = new Set(["iphone-repair", "android-repair", "tablet-repair"]);
 const computerServices = new Set([
@@ -12,20 +14,12 @@ const computerServices = new Set([
   "macbook-repair",
   "data-recovery",
 ]);
-const electronicsServices = new Set([
-  "printer-repair",
-  "cctv-repair",
-  "console-repair",
-  "networking-repair",
-]);
+const electronicsServices = new Set(["printer-repair"]);
 const serviceImages: Record<string, string> = {
   "gaming-pc-repair": "/brand/repair-shop-gaming-pc.svg",
   "iphone-repair": "/brand/repair-shop-iphone.svg",
   "tablet-repair": "/brand/repair-shop-tablet.svg",
   "printer-repair": "/brand/repair-shop-printer.svg",
-  "cctv-repair": "/brand/repair-shop-cctv.svg",
-  "console-repair": "/brand/repair-shop-console.svg",
-  "networking-repair": "/brand/repair-shop-networking.svg",
   "data-recovery": "/brand/repair-shop-data-recovery.svg",
 };
 
@@ -48,7 +42,10 @@ export function BusinessCard({ business }: { business: Business }) {
   const locationName = business.locationName ?? location?.name;
   return (
     <article className="listing-card group">
-      <Link href={`/business/${business.slug}`} aria-label={`View ${business.name}`}>
+      <Link
+        href={shopPath(business.locationSlug, business.slug) as Route}
+        aria-label={`View ${business.name}`}
+      >
         <div className="listing-visual">
           <Image
             src={business.image ?? getFallbackImage(business.serviceSlugs)}
@@ -77,7 +74,7 @@ export function BusinessCard({ business }: { business: Business }) {
             </p>
             <h3 className="text-lg font-semibold tracking-[-0.03em] text-ink sm:text-xl">
               <Link
-                href={`/business/${business.slug}`}
+                href={shopPath(business.locationSlug, business.slug) as Route}
                 className="transition-colors hover:text-coral"
               >
                 {business.name}
@@ -121,7 +118,7 @@ export function BusinessCard({ business }: { business: Business }) {
         <div className="flex items-center justify-between gap-3 border-t border-ink/10 pt-3 text-[13px]">
           <span className="truncate font-normal text-ink/50">{business.hours}</span>
           <Link
-            href={`/business/${business.slug}`}
+            href={shopPath(business.locationSlug, business.slug) as Route}
             className="shrink-0 font-semibold text-ink transition-colors group-hover:text-coral"
           >
             View profile <span aria-hidden>↗</span>

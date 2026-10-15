@@ -19,12 +19,12 @@ export function SiteHeader() {
           <Link href="/search" className="transition-colors hover:text-coral">
             Find a repair shop
           </Link>
-          <Link href="/cebu/laptop-repair" className="transition-colors hover:text-coral">
-            Popular services
+          <Link href="/about" className="transition-colors hover:text-coral">
+            About
           </Link>
-          <a href="#how-it-works" className="transition-colors hover:text-coral">
-            How it works
-          </a>
+          <Link href="/contact" className="transition-colors hover:text-coral">
+            Contact us
+          </Link>
         </nav>
         <Link href="/search" className="button-dark hidden px-4 py-2 sm:inline-flex">
           Find Shops <span aria-hidden>↗</span>

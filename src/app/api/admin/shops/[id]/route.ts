@@ -27,7 +27,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   if (clearError) return NextResponse.json({ error: clearError.message }, { status: 400 });
   if (validation.data.serviceIds.length) {
     const { error: serviceError } = await context.client.from("business_services").insert(
-      validation.data.serviceIds.map((serviceId) => ({ business_id: params.id, service_id: serviceId })),
+      validation.data.serviceIds.map((serviceId) => ({
+        business_id: params.id,
+        service_id: serviceId,
+      })),
     );
     if (serviceError) return NextResponse.json({ error: serviceError.message }, { status: 400 });
   }

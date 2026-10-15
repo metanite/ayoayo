@@ -10,19 +10,33 @@ create table if not exists public.admin_users (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.categories (id uuid primary key default uuid_generate_v4(), name text not null, slug text not null unique, description text, sort_order integer not null default 0, is_active boolean not null default true, created_at timestamptz not null default now());
-create table if not exists public.services (id uuid primary key default uuid_generate_v4(), category_id uuid not null references public.categories(id) on delete restrict, name text not null, slug text not null unique, description text, keywords text[] not null default '{}', is_active boolean not null default true, created_at timestamptz not null default now());
-create table if not exists public.locations (id uuid primary key default uuid_generate_v4(), parent_id uuid references public.locations(id) on delete restrict, name text not null, slug text not null unique, type text not null check (type in ('province', 'city', 'municipality', 'barangay')), description text, coordinates extensions.geography(point, 4326), is_active boolean not null default true, created_at timestamptz not null default now());
-create table if not exists public.businesses (id uuid primary key default uuid_generate_v4(), slug text not null unique, name text not null, tagline text, description text, location_id uuid not null references public.locations(id) on delete restrict, barangay text, address text not null, phone text, website text, facebook text, instagram text, hours jsonb not null default '{}'::jsonb, coordinates extensions.geography(point, 4326), status text not null default 'draft' check (status in ('draft', 'published', 'unpublished', 'flagged')), verified boolean not null default false, featured boolean not null default false, last_verified_at timestamptz, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+grant select, insert, update on public.admin_users to service_role;
+grant select on public.admin_users to authenticated;
+
+create table if not exists public.categories (id uuid primary key default extensions.uuid_generate_v4(), name text not null, slug text not null unique, description text, sort_order integer not null default 0, is_active boolean not null default true, created_at timestamptz not null default now());
+create table if not exists public.services (id uuid primary key default extensions.uuid_generate_v4(), category_id uuid not null references public.categories(id) on delete restrict, name text not null, slug text not null unique, description text, keywords text[] not null default '{}', is_active boolean not null default true, created_at timestamptz not null default now());
+create table if not exists public.locations (id uuid primary key default extensions.uuid_generate_v4(), parent_id uuid references public.locations(id) on delete restrict, name text not null, slug text not null unique, type text not null check (type in ('province', 'city', 'municipality', 'barangay')), description text, coordinates extensions.geography(point, 4326), is_active boolean not null default true, created_at timestamptz not null default now());
+create table if not exists public.businesses (id uuid primary key default extensions.uuid_generate_v4(), slug text not null unique, name text not null, tagline text, description text, location_id uuid not null references public.locations(id) on delete restrict, barangay text, address text not null, phone text, website text, facebook text, instagram text, hours jsonb not null default '{}'::jsonb, coordinates extensions.geography(point, 4326), status text not null default 'draft' check (status in ('draft', 'published', 'unpublished', 'flagged')), verified boolean not null default false, featured boolean not null default false, last_verified_at timestamptz, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
 create table if not exists public.business_services (business_id uuid not null references public.businesses(id) on delete cascade, service_id uuid not null references public.services(id) on delete cascade, primary key (business_id, service_id));
-create table if not exists public.business_links (id uuid primary key default uuid_generate_v4(), business_id uuid not null references public.businesses(id) on delete cascade, label text not null, url text not null, created_at timestamptz not null default now());
+create table if not exists public.business_links (id uuid primary key default extensions.uuid_generate_v4(), business_id uuid not null references public.businesses(id) on delete cascade, label text not null, url text not null, created_at timestamptz not null default now());
 create table if not exists public.business_hours (business_id uuid primary key references public.businesses(id) on delete cascade, hours jsonb not null default '{}'::jsonb);
-create table if not exists public.business_reports (id uuid primary key default uuid_generate_v4(), business_id uuid not null references public.businesses(id) on delete cascade, reason text not null, details text, reporter_email text, status text not null default 'open' check (status in ('open', 'reviewed', 'resolved')), created_at timestamptz not null default now());
+create table if not exists public.business_reports (id uuid primary key default extensions.uuid_generate_v4(), business_id uuid not null references public.businesses(id) on delete cascade, reason text not null, details text, reporter_email text, status text not null default 'open' check (status in ('open', 'reviewed', 'resolved')), created_at timestamptz not null default now());
 create table if not exists public.analytics_events (id bigint generated always as identity primary key, event_name text not null, business_id uuid references public.businesses(id) on delete set null, service_id uuid references public.services(id) on delete set null, location_id uuid references public.locations(id) on delete set null, metadata jsonb not null default '{}'::jsonb, created_at timestamptz not null default now());
 
 create index if not exists businesses_coordinates_idx on public.businesses using gist (coordinates);
 create index if not exists businesses_status_idx on public.businesses(status);
 create index if not exists locations_parent_idx on public.locations(parent_id);
+
+-- Retire repair types that are no longer part of the public directory.
+delete from public.business_services
+where service_id in (
+  select id
+  from public.services
+  where slug in ('console-repair', 'cctv-repair', 'networking-repair')
+);
+update public.services
+set is_active = false
+where slug in ('console-repair', 'cctv-repair', 'networking-repair');
 
 create or replace function private.is_admin()
 returns boolean

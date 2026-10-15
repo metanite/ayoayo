@@ -1,9 +1,20 @@
-import { businesses as demoBusinesses, categories as demoCategories, locations as demoLocations, services as demoServices } from "@/lib/data";
+import {
+  businesses as demoBusinesses,
+  categories as demoCategories,
+  locations as demoLocations,
+  services as demoServices,
+} from "@/lib/data";
 import type { Business, BusinessHours, Category, Location, Service } from "@/lib/types";
 import { getSupabaseClient } from "@/lib/supabase";
 
+export const REMOVED_SERVICE_SLUGS = new Set([
+  "console-repair",
+  "cctv-repair",
+  "networking-repair",
+]);
+
 function first<T>(value: T | T[] | null | undefined): T | undefined {
-  return Array.isArray(value) ? value[0] : value ?? undefined;
+  return Array.isArray(value) ? value[0] : (value ?? undefined);
 }
 
 function coordinates(value: unknown): { latitude: number; longitude: number } {
@@ -28,7 +39,7 @@ function mapBusiness(row: any): Business {
   const location = first(row.locations);
   const linkedServices = (row.business_services ?? [])
     .map((item: any) => ({ id: item.service_id, service: first(item.services) }))
-    .filter((item: any) => item.service?.slug);
+    .filter((item: any) => item.service?.slug && !REMOVED_SERVICE_SLUGS.has(item.service.slug));
   const point = coordinates(row.coordinates);
   return {
     id: row.id,
@@ -69,16 +80,28 @@ export async function getDirectoryData(): Promise<DirectoryData> {
   if (!client) {
     return {
       categories: demoCategories,
-      services: demoServices,
+      services: demoServices.filter((service) => !REMOVED_SERVICE_SLUGS.has(service.slug)),
       locations: demoLocations,
       businesses: demoBusinesses,
     };
   }
 
   const [categoryResult, serviceResult, locationResult, businessResult] = await Promise.all([
-    client.from("categories").select("id, name, slug, description").eq("is_active", true).order("sort_order"),
-    client.from("services").select("id, category_id, name, slug, description, keywords").eq("is_active", true).order("name"),
-    client.from("locations").select("id, parent_id, name, slug, type, description, coordinates").eq("is_active", true).order("name"),
+    client
+      .from("categories")
+      .select("id, name, slug, description")
+      .eq("is_active", true)
+      .order("sort_order"),
+    client
+      .from("services")
+      .select("id, category_id, name, slug, description, keywords")
+      .eq("is_active", true)
+      .order("name"),
+    client
+      .from("locations")
+      .select("id, parent_id, name, slug, type, description, coordinates")
+      .eq("is_active", true)
+      .order("name"),
     client
       .from("businesses")
       .select("*, locations(slug, name), business_services(service_id, services(slug, name))")
@@ -90,7 +113,7 @@ export async function getDirectoryData(): Promise<DirectoryData> {
   if (categoryResult.error || serviceResult.error || locationResult.error || businessResult.error) {
     return {
       categories: demoCategories,
-      services: demoServices,
+      services: demoServices.filter((service) => !REMOVED_SERVICE_SLUGS.has(service.slug)),
       locations: demoLocations,
       businesses: demoBusinesses,
     };
@@ -99,15 +122,17 @@ export async function getDirectoryData(): Promise<DirectoryData> {
   const locationRows = locationResult.data ?? [];
   const locationById = new Map(locationRows.map((item: any) => [item.id, item.slug]));
   const serviceRows = serviceResult.data ?? [];
-  const services: Service[] = serviceRows.map((item: any) => ({
-    id: item.id,
-    categoryId: item.category_id,
-    name: item.name,
-    slug: item.slug,
-    icon: "all",
-    description: item.description ?? "",
-    keywords: item.keywords ?? [],
-  }));
+  const services: Service[] = serviceRows
+    .filter((item: any) => !REMOVED_SERVICE_SLUGS.has(item.slug))
+    .map((item: any) => ({
+      id: item.id,
+      categoryId: item.category_id,
+      name: item.name,
+      slug: item.slug,
+      icon: "all",
+      description: item.description ?? "",
+      keywords: item.keywords ?? [],
+    }));
   const locations: Location[] = locationRows.map((item: any) => ({
     slug: item.slug,
     name: item.name,
@@ -137,4 +162,21 @@ export function findService(data: DirectoryData, slug: string) {
 
 export function findLocation(data: DirectoryData, slug: string) {
   return data.locations.find((location) => location.slug === slug);
+}
+
+export function matchesLocation(
+  businessLocationSlug: string,
+  locationSlug: string | undefined,
+  locations: Location[],
+) {
+  if (!locationSlug) return true;
+  if (businessLocationSlug === locationSlug) return true;
+
+  const bySlug = new Map(locations.map((location) => [location.slug, location]));
+  let current = bySlug.get(businessLocationSlug);
+  while (current?.parentSlug) {
+    if (current.parentSlug === locationSlug) return true;
+    current = bySlug.get(current.parentSlug);
+  }
+  return false;
 }

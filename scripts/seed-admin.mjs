@@ -8,7 +8,10 @@ if (fs.existsSync(envPath)) {
     if (!line || line.trim().startsWith("#") || !line.includes("=")) continue;
     const separator = line.indexOf("=");
     const key = line.slice(0, separator).trim();
-    const value = line.slice(separator + 1).trim().replace(/^"|"$/g, "");
+    const value = line
+      .slice(separator + 1)
+      .trim()
+      .replace(/^"|"$/g, "");
     if (!process.env[key]) process.env[key] = value;
   }
 }

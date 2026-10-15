@@ -17,34 +17,21 @@ export default async function HomePage() {
         <div className="container-shell py-6 sm:py-14">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-bold leading-[1.05] tracking-[-0.06em] text-ink sm:text-5xl">
-              Find tech repair shops in Cebu
+              Find the right tech repair shop
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/60">
-              Discover trusted laptop, phone, computer and electronics repair shops across Cebu.
+              Discover trusted laptop, phone, computer and electronics repair shops near you.
             </p>
           </div>
           <div className="mx-auto mt-6 max-w-4xl">
-            <SearchForm />
-          </div>
-          <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-ink/55">
-            <span className="font-semibold text-ink/75">Popular services</span>
-            {services.slice(0, 4).map((service) => (
-              <Link
-                key={service.slug}
-                href={`/cebu/${service.slug}`}
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-coral"
-              >
-                <ServiceIcon name={service.icon} className="h-3.5 w-3.5 text-forest/70" />
-                {service.name}
-              </Link>
-            ))}
+            <SearchForm locations={locations} />
           </div>
         </div>
       </section>
 
       <LandingDirectory businesses={businesses} locations={locations} />
 
-      <section className="container-shell py-10 sm:py-12">
+      <section className="container-shell py-6 sm:py-12">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <SectionHeading
             eyebrow="Browse the directory"
@@ -77,7 +64,7 @@ export default async function HomePage() {
                   .slice(0, 4)
                   .map((service) => (
                     <Link
-                      href={`/cebu/${service.slug}`}
+                      href={`/search?service=${service.slug}`}
                       key={service.slug}
                       className="inline-flex items-center gap-1.5 rounded-full bg-cloud px-3 py-1.5 text-xs font-medium text-ink/70 transition hover:bg-lime hover:text-ink"
                     >
@@ -91,42 +78,42 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="container-shell py-10 sm:py-12">
-        <div className="rounded-3xl bg-forest p-6 text-white sm:p-8">
-          <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-center">
-            <div>
-              <p className="eyebrow text-lime">Simple by design</p>
-              <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight tracking-[-0.06em]">
-                Less scrolling. More fixing.
-              </h2>
-              <p className="mt-4 max-w-md text-sm leading-6 text-white/65">
-                A focused way to compare local repair shops and get your device back in your hands.
-              </p>
-            </div>
-            <div className="grid gap-6 sm:grid-cols-3">
-              <div>
-                <span className="font-mono text-sm font-semibold text-lime">01</span>
-                <h3 className="mt-2 font-semibold">Search</h3>
-                <p className="mt-1 text-sm leading-6 text-white/60">
-                  Choose a service and municipality.
-                </p>
-              </div>
-              <div>
-                <span className="font-mono text-sm font-semibold text-lime">02</span>
-                <h3 className="mt-2 font-semibold">Compare</h3>
-                <p className="mt-1 text-sm leading-6 text-white/60">
-                  Review details, hours and services.
-                </p>
-              </div>
-              <div>
-                <span className="font-mono text-sm font-semibold text-lime">03</span>
-                <h3 className="mt-2 font-semibold">Connect</h3>
-                <p className="mt-1 text-sm leading-6 text-white/60">
-                  Call or get directions to a shop.
-                </p>
-              </div>
-            </div>
-          </div>
+      <section className="container-shell py-6 sm:py-12">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Link
+            href="/about"
+            className="group rounded-3xl bg-forest p-6 text-white transition hover:-translate-y-1 hover:shadow-soft sm:p-8"
+          >
+            <p className="eyebrow text-lime">About ayoayo.ph</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.06em]">
+              A simpler way to find local repair shops.
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-6 text-white/65">
+              Learn more about the directory and our focus on helping people find trusted tech
+              repair shops in Cebu.
+            </p>
+            <span className="mt-6 inline-flex font-semibold text-lime">
+              Learn about us{" "}
+              <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+            </span>
+          </Link>
+          <Link
+            href="/contact"
+            className="group rounded-3xl border border-ink/10 bg-white p-6 transition hover:-translate-y-1 hover:border-coral/30 hover:shadow-soft sm:p-8"
+          >
+            <p className="eyebrow text-coral">Contact us</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.06em] text-ink">
+              Have a question or a shop to add?
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-6 text-ink/60">
+              Get in touch with the ayoayo.ph team about listings, corrections, partnerships or
+              anything else.
+            </p>
+            <span className="mt-6 inline-flex font-semibold text-coral">
+              Get in touch{" "}
+              <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+            </span>
+          </Link>
         </div>
       </section>
     </main>

@@ -36,9 +36,12 @@ export function validateShopPayload(input: unknown): { data?: ShopPayload; error
   const status = value.status as BusinessStatus;
   if (!statuses.has(status)) return { error: "Invalid shop status." };
   const latitude = value.latitude === null || value.latitude === "" ? null : Number(value.latitude);
-  const longitude = value.longitude === null || value.longitude === "" ? null : Number(value.longitude);
-  if (latitude !== null && !Number.isFinite(latitude)) return { error: "Latitude must be a number." };
-  if (longitude !== null && !Number.isFinite(longitude)) return { error: "Longitude must be a number." };
+  const longitude =
+    value.longitude === null || value.longitude === "" ? null : Number(value.longitude);
+  if (latitude !== null && !Number.isFinite(latitude))
+    return { error: "Latitude must be a number." };
+  if (longitude !== null && !Number.isFinite(longitude))
+    return { error: "Longitude must be a number." };
 
   return {
     data: {

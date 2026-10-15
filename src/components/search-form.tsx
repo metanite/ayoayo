@@ -1,9 +1,19 @@
-import { locations, services } from "@/lib/data";
+"use client";
+
+import { FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import type { Route } from "next";
+import { locations as demoLocations, services } from "@/lib/data";
 import { PickerOption, ServicePicker } from "@/components/service-picker";
+import type { Location } from "@/lib/types";
+import { getSupportedSearchLocations } from "@/lib/locations";
+import { locationPath } from "@/lib/urls";
 
 type SearchFormProps = {
   compact?: boolean;
   defaultValues?: { service?: string; location?: string };
+  locations?: Location[];
+  showCebuAreas?: boolean;
 };
 
 const serviceOptions: PickerOption[] = services.map((service) => ({
@@ -13,18 +23,41 @@ const serviceOptions: PickerOption[] = services.map((service) => ({
   description: service.description,
 }));
 
-const locationOptions: PickerOption[] = locations
-  .filter((location) => location.slug !== "cebu")
-  .map((location) => ({
+export function SearchForm({
+  compact = false,
+  defaultValues = {},
+  locations = demoLocations,
+  showCebuAreas = false,
+}: SearchFormProps) {
+  const router = useRouter();
+  const supportedLocations = getSupportedSearchLocations(locations);
+  const locationOptions: PickerOption[] = (
+    showCebuAreas
+      ? supportedLocations
+      : supportedLocations.filter((location) => location.slug === "cebu")
+  ).map((location) => ({
     name: location.name,
     slug: location.slug,
     icon: "location",
   }));
 
-export function SearchForm({ compact = false, defaultValues = {} }: SearchFormProps) {
+  function submit(event: FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget);
+    const location = String(formData.get("location") ?? "");
+    if (!location) return;
+
+    event.preventDefault();
+    const service = String(formData.get("service") ?? "");
+    const destination = service
+      ? `${locationPath(location)}/${encodeURIComponent(service)}`
+      : locationPath(location);
+    router.push(destination as Route);
+  }
+
   return (
     <form
       action="/search"
+      onSubmit={submit}
       className={compact ? "search-panel search-panel-compact" : "search-panel"}
     >
       <div className="search-field">
@@ -40,14 +73,14 @@ export function SearchForm({ compact = false, defaultValues = {} }: SearchFormPr
         />
       </div>
       <div className="search-field">
-        <label htmlFor={compact ? "compact-location" : "location"}>Municipality</label>
+        <label htmlFor={compact ? "compact-location" : "location"}>Location</label>
         <ServicePicker
           id={compact ? "compact-location" : "location"}
           name="location"
-          ariaLabel="Choose a municipality"
+          ariaLabel="Choose a location"
           defaultValue={defaultValues.location ?? ""}
           options={locationOptions}
-          allLabel="All municipalities"
+          allLabel="All locations"
           allIcon="location"
         />
       </div>

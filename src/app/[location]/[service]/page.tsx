@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BusinessCard } from "@/components/business-card";
-import { findLocation, findService, getDirectoryData } from "@/lib/directory";
+import { findLocation, findService, getDirectoryData, matchesLocation } from "@/lib/directory";
+import { locationPath, locationSlugFromPath, shopPath } from "@/lib/urls";
 
 type LandingPageProps = { params: { location: string; service: string } };
 
@@ -11,13 +12,14 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: LandingPageProps): Promise<Metadata> {
   const data = await getDirectoryData();
   const service = findService(data, params.service);
-  const location = findLocation(data, params.location);
+  const location = findLocation(data, locationSlugFromPath(params.location));
   if (!service || !location) return {};
   const title = `${service.name} in ${location.name}`;
   return {
     title,
     description: `${service.description} Browse local listings, contact details and locations for ${service.name.toLowerCase()} in ${location.name}.`,
-    alternates: { canonical: `/${location.slug}/${service.slug}` },
+    keywords: service.keywords,
+    alternates: { canonical: `${locationPath(location.slug)}/${service.slug}` },
     openGraph: { title: `${title} | ayoayo.ph`, description: service.description },
   };
 }
@@ -25,18 +27,16 @@ export async function generateMetadata({ params }: LandingPageProps): Promise<Me
 export default async function ServiceLocationPage({ params }: LandingPageProps) {
   const data = await getDirectoryData();
   const service = findService(data, params.service);
-  const location = findLocation(data, params.location);
+  const location = findLocation(data, locationSlugFromPath(params.location));
   if (!service || !location) notFound();
 
   const results = data.businesses.filter(
     (business) =>
       business.serviceSlugs.includes(service.slug) &&
-      (location.slug === "cebu" || business.locationSlug === location.slug),
+      matchesLocation(business.locationSlug, location.slug, data.locations),
   );
   const category = data.categories.find((item) => item.id === service.categoryId);
-  const nearby = data.locations
-    .filter((item) => item.slug !== location.slug && item.slug !== "cebu")
-    .slice(0, 4);
+  const nearby = data.locations.filter((item) => item.slug !== location.slug).slice(0, 4);
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -45,7 +45,7 @@ export default async function ServiceLocationPage({ params }: LandingPageProps) 
     itemListElement: results.map((business, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `https://ayoayo.ph/business/${business.slug}`,
+      url: `https://ayoayo.ph${shopPath(business.locationSlug, business.slug)}`,
       name: business.name,
     })),
   };
@@ -57,14 +57,14 @@ export default async function ServiceLocationPage({ params }: LandingPageProps) 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <section className="hero-section border-b border-ink/10">
-        <div className="container-shell py-10 sm:py-12">
+        <div className="container-shell py-6 sm:py-12">
           <nav className="mb-6 text-sm text-ink/50">
             <Link href="/" className="hover:text-coral">
               Home
             </Link>
             <span className="mx-2">/</span>
             <Link href="/search" className="hover:text-coral">
-              Cebu tech repair
+              Repair shops
             </Link>
             <span className="mx-2">/</span>
             <span className="text-ink/80">{service.name}</span>
@@ -81,7 +81,7 @@ export default async function ServiceLocationPage({ params }: LandingPageProps) 
           </p>
         </div>
       </section>
-      <section className="container-shell py-10 sm:py-12">
+      <section className="container-shell py-6 sm:py-12">
         <div className="flex flex-col justify-between gap-4 border-b border-ink/10 pb-6 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-semibold text-coral">
@@ -110,10 +110,10 @@ export default async function ServiceLocationPage({ params }: LandingPageProps) 
               No listings in this area yet
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink/55">
-              Browse nearby areas or search all of Cebu for {service.name.toLowerCase()}.
+              Browse nearby areas or search all locations for {service.name.toLowerCase()}.
             </p>
             <Link href={`/search?service=${service.slug}`} className="button-dark mt-5">
-              Search all Cebu
+              Search all locations
             </Link>
           </div>
         )}
@@ -124,9 +124,9 @@ export default async function ServiceLocationPage({ params }: LandingPageProps) 
               Looking for {service.name.toLowerCase()} in {location.name}?
             </h2>
             <p className="mt-3 max-w-2xl text-base leading-8 text-ink/60">
-              Use ayoayo.ph to find repair shops that serve {location.name} and nearby Cebu
-              communities. Call ahead to confirm parts availability, turnaround time and service
-              coverage before visiting.
+              Use ayoayo.ph to find repair shops that serve {location.name} and nearby communities.
+              Call ahead to confirm parts availability, turnaround time and service coverage before
+              visiting.
             </p>
           </div>
           <div className="rounded-2xl bg-cloud p-5">
@@ -137,7 +137,7 @@ export default async function ServiceLocationPage({ params }: LandingPageProps) 
               {nearby.map((item) => (
                 <Link
                   key={item.slug}
-                  href={`/${item.slug}/${service.slug}`}
+                  href={`${locationPath(item.slug)}/${service.slug}` as Route}
                   className="flex items-center justify-between border-b border-ink/10 pb-3 text-sm font-semibold transition-colors hover:text-coral"
                 >
                   <span>

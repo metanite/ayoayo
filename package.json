@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed-admin": "node scripts/seed-admin.mjs",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write --ignore-unknown .",
+    "format:check": "prettier --check --ignore-unknown ."
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

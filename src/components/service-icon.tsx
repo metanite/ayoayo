@@ -84,26 +84,6 @@ export function ServiceIcon({ name, className = "h-4 w-4" }: ServiceIconProps) {
         <path d="M7 14h10v7H7zM17 11h.01" {...iconProps} />
       </>
     ),
-    cctv: (
-      <>
-        <path d="m4 10 12-5 3 7-12 5zM7 17l-2 4M16 13l3 5M4 10l-2-1" {...iconProps} />
-        <circle cx="16.5" cy="8.5" r="1" {...iconProps} />
-      </>
-    ),
-    console: (
-      <>
-        <path d="m7 7 2 2h6l2-2 4 3v8a2 2 0 0 1-2 2l-3-4H8l-3 4a2 2 0 0 1-2-2v-8z" {...iconProps} />
-        <path d="M7 12v4M5 14h4M17 13h.01M19 15h.01" {...iconProps} />
-      </>
-    ),
-    network: (
-      <>
-        <rect x="8" y="3" width="8" height="5" rx="1" {...iconProps} />
-        <rect x="3" y="16" width="6" height="5" rx="1" {...iconProps} />
-        <rect x="15" y="16" width="6" height="5" rx="1" {...iconProps} />
-        <path d="M12 8v4M6 16v-4h12v4" {...iconProps} />
-      </>
-    ),
     all: (
       <>
         <rect x="4" y="4" width="6" height="6" rx="1" {...iconProps} />

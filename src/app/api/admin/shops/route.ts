@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminContext } from "@/lib/admin";
 import { shopRow, validateShopPayload } from "@/lib/admin-shops";
+import { REMOVED_SERVICE_SLUGS } from "@/lib/directory";
 
 function unauthorized() {
   return NextResponse.json({ error: "Administrator access required." }, { status: 401 });
@@ -15,22 +16,33 @@ export async function GET() {
       .from("businesses")
       .select("*, locations(id, name, slug), business_services(service_id)")
       .order("created_at", { ascending: false }),
-    context.client.from("services").select("id, name, slug, category_id").order("name"),
+    context.client
+      .from("services")
+      .select("id, name, slug, category_id")
+      .eq("is_active", true)
+      .order("name"),
     context.client.from("locations").select("id, name, slug, type").order("name"),
   ]);
   if (shopsResult.error || servicesResult.error || locationsResult.error) {
     return NextResponse.json({ error: "Unable to load admin data." }, { status: 500 });
   }
 
+  const activeServices = (servicesResult.data ?? []).filter(
+    (service: any) => !REMOVED_SERVICE_SLUGS.has(service.slug),
+  );
+  const activeServiceIds = new Set(activeServices.map((service: any) => service.id));
+
   return NextResponse.json({
     shops: (shopsResult.data ?? []).map((shop: any) => ({
       ...shop,
       location: Array.isArray(shop.locations) ? shop.locations[0] : shop.locations,
-      serviceIds: (shop.business_services ?? []).map((item: any) => item.service_id),
+      serviceIds: (shop.business_services ?? [])
+        .map((item: any) => item.service_id)
+        .filter((serviceId: string) => activeServiceIds.has(serviceId)),
       latitude: shop.coordinates?.coordinates?.[1] ?? null,
       longitude: shop.coordinates?.coordinates?.[0] ?? null,
     })),
-    services: servicesResult.data ?? [],
+    services: activeServices,
     locations: locationsResult.data ?? [],
   });
 }
@@ -48,11 +60,18 @@ export async function POST(request: Request) {
     .insert(shopRow(validation.data))
     .select("id")
     .single();
-  if (error || !shop) return NextResponse.json({ error: error?.message ?? "Unable to create shop." }, { status: 400 });
+  if (error || !shop)
+    return NextResponse.json(
+      { error: error?.message ?? "Unable to create shop." },
+      { status: 400 },
+    );
 
   if (validation.data.serviceIds.length) {
     const { error: serviceError } = await context.client.from("business_services").insert(
-      validation.data.serviceIds.map((serviceId) => ({ business_id: shop.id, service_id: serviceId })),
+      validation.data.serviceIds.map((serviceId) => ({
+        business_id: shop.id,
+        service_id: serviceId,
+      })),
     );
     if (serviceError) return NextResponse.json({ error: serviceError.message }, { status: 400 });
   }

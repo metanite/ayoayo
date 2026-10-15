@@ -10,9 +10,6 @@ export type ServiceIconName =
   | "android"
   | "tablet"
   | "printer"
-  | "cctv"
-  | "console"
-  | "network"
   | "all"
   | "location";
 

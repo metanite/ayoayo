@@ -1,13 +1,14 @@
 # ayoayo.ph
 
-ayoayo.ph is a Cebu tech-repair directory that helps people find local shops for laptop, phone, computer, gaming PC, electronics, and other device repairs.
+ayoayo.ph is a tech-repair directory that helps people find local shops for laptop, phone, computer, gaming PC, electronics, and other device repairs.
 
 The public MVP includes:
 
-- Service and municipality search
-- Interactive municipality filtering on the homepage
-- Service/location SEO pages, such as `/cebu/laptop-repair`
-- Business profile pages, such as `/business/cebu-laptop-lab`
+- Service and location search
+- Interactive location filtering on the homepage
+- Location pages, such as `/cebu-tech-repair-shops`, for browsing shops in a province or city
+- Service/location SEO pages, such as `/cebu-tech-repair-shops/laptop-repair`
+- Shop profile pages, such as `/cebu-tech-repair-shops/tech-repair-shop/cebu-laptop-lab`
 - Responsive listing cards with service-specific placeholder images
 - Metadata, canonical URLs, sitemap, and robots rules
 
@@ -25,6 +26,8 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SITE_URL` when running the site with a custom or production URL.
+
+For an existing Supabase project, run `supabase/remove-obsolete-services.sql` once to deactivate the retired console, CCTV, and networking/Wi-Fi service records.
 
 ## Admin dashboard
 
