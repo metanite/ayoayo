@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import cebuAddresses from "@/lib/cebu-addresses.json";
@@ -12,6 +13,7 @@ export type Shop = {
   id: string;
   slug: string;
   name: string;
+  image_url: string | null;
   tagline: string | null;
   description: string | null;
   location_id: string;
@@ -36,6 +38,7 @@ export type Shop = {
 export type ShopForm = {
   slug: string;
   name: string;
+  imageUrl: string;
   tagline: string;
   description: string;
   locationId: string;
@@ -85,6 +88,7 @@ function emptyForm(): ShopForm {
   return {
     slug: "",
     name: "",
+    imageUrl: "",
     tagline: "",
     description: "",
     locationId: "",
@@ -108,6 +112,7 @@ function toForm(shop: Shop): ShopForm {
   return {
     slug: shop.slug,
     name: shop.name,
+    imageUrl: shop.image_url ?? "",
     tagline: shop.tagline ?? "",
     description: shop.description ?? "",
     locationId: shop.location_id,
@@ -136,6 +141,33 @@ function slugify(value: string) {
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+const maxShopImageDimension = 1600;
+const maxShopImageFileSize = 10 * 1024 * 1024;
+
+async function optimizeShopImage(file: File) {
+  if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
+  if (file.size > maxShopImageFileSize) throw new Error("Images must be 10 MB or smaller.");
+
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxShopImageDimension / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Unable to prepare this image.");
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (result) => (result ? resolve(result) : reject(new Error("Unable to optimize this image."))),
+      "image/webp",
+      0.82,
+    );
+  });
+  return new File([blob], "shop-image.webp", { type: "image/webp" });
 }
 
 export function AdminPageHeader({
@@ -507,14 +539,27 @@ export function AdminShopForm({ adminName, shopId }: { adminName: string; shopId
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [formError, setFormError] = useState("");
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [barangays, setBarangays] = useState<string[]>([]);
   const [barangaysLoading, setBarangaysLoading] = useState(false);
   const [barangayError, setBarangayError] = useState("");
   const locationOptions = useMemo(() => getCebuLocationOptions(locations), [locations]);
 
   useEffect(() => {
-    if (editingShop) setForm(toForm(editingShop));
+    if (editingShop) {
+      const nextForm = toForm(editingShop);
+      setForm(nextForm);
+      setPendingImage(null);
+      setImagePreview(nextForm.imageUrl);
+    }
   }, [editingShop]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   useEffect(() => {
     const selectedLocation = locationOptions.find((location) => location.id === form.locationId);
@@ -544,6 +589,25 @@ export function AdminShopForm({ adminName, shopId }: { adminName: string; shopId
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  async function selectImage(file: File | undefined) {
+    if (!file) return;
+    setFormError("");
+    try {
+      const optimizedImage = await optimizeShopImage(file);
+      setPendingImage(optimizedImage);
+      setImagePreview(URL.createObjectURL(optimizedImage));
+    } catch (imageError) {
+      setPendingImage(null);
+      setFormError(imageError instanceof Error ? imageError.message : "Unable to use this image.");
+    }
+  }
+
+  function removeImage() {
+    setPendingImage(null);
+    setImagePreview("");
+    update("imageUrl", "");
+  }
+
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -564,6 +628,23 @@ export function AdminShopForm({ adminName, shopId }: { adminName: string; shopId
       setSaving(false);
       return;
     }
+
+    if (pendingImage && data?.id) {
+      const imageData = new FormData();
+      imageData.append("file", pendingImage);
+      const imageResponse = await fetch(`/api/admin/shops/${data.id}/image`, {
+        method: "POST",
+        body: imageData,
+      });
+      const imageResult = await imageResponse.json().catch(() => null);
+      if (!imageResponse.ok) {
+        setFormError(imageResult?.error ?? "Shop saved, but the image upload failed.");
+        setSaving(false);
+        return;
+      }
+      update("imageUrl", imageResult.imageUrl ?? "");
+    }
+
     setMessage(
       shopId
         ? "Shop updated. Returning to the directory…"
@@ -680,6 +761,41 @@ export function AdminShopForm({ adminName, shopId }: { adminName: string; shopId
                     className="admin-input"
                   />
                 </Field>
+                <div className="min-w-0 text-sm font-semibold sm:col-span-2">
+                  <span>Shop image</span>
+                  <div className="mt-2 flex flex-col gap-3 rounded-xl border border-ink/10 p-3 sm:flex-row sm:items-center">
+                    <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg bg-cloud sm:w-44">
+                      <Image
+                        src={imagePreview || form.imageUrl || "/brand/repair-shop-placeholder.svg"}
+                        alt={form.name ? `${form.name} shop image` : "Generic shop image"}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                        sizes="176px"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(event) => void selectImage(event.target.files?.[0])}
+                        className="admin-input file:mr-3 file:rounded-lg file:border-0 file:bg-forest file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
+                      />
+                      <p className="mt-1 text-xs font-normal leading-5 text-ink/45">
+                        Optional. Images are resized and converted to optimized WebP before upload.
+                      </p>
+                      {(imagePreview || form.imageUrl) && (
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="mt-2 text-xs font-semibold text-coral hover:text-ink"
+                        >
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <div className="min-w-0 text-sm font-semibold sm:col-span-2">
                   <span>Services</span>
                   <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-2">

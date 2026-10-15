@@ -6,37 +6,6 @@ import { ServiceIcon } from "@/components/service-icon";
 import { Business } from "@/lib/types";
 import { shopPath } from "@/lib/urls";
 
-const mobileServices = new Set(["iphone-repair", "android-repair", "tablet-repair"]);
-const computerServices = new Set([
-  "laptop-repair",
-  "computer-repair",
-  "gaming-pc-repair",
-  "macbook-repair",
-  "data-recovery",
-]);
-const electronicsServices = new Set(["printer-repair"]);
-const serviceImages: Record<string, string> = {
-  "gaming-pc-repair": "/brand/repair-shop-gaming-pc.svg",
-  "iphone-repair": "/brand/repair-shop-iphone.svg",
-  "tablet-repair": "/brand/repair-shop-tablet.svg",
-  "printer-repair": "/brand/repair-shop-printer.svg",
-  "data-recovery": "/brand/repair-shop-data-recovery.svg",
-};
-
-function getFallbackImage(serviceSlugs: string[]) {
-  const hasMobile = serviceSlugs.some((slug) => mobileServices.has(slug));
-  const hasComputer = serviceSlugs.some((slug) => computerServices.has(slug));
-  const hasElectronics = serviceSlugs.some((slug) => electronicsServices.has(slug));
-
-  if (hasMobile && hasComputer) return "/brand/repair-shop-laptop-phone.svg";
-  const specificService = serviceSlugs.find((slug) => serviceImages[slug]);
-  if (specificService) return serviceImages[specificService];
-  if (hasMobile) return "/brand/repair-shop-phone.svg";
-  if (hasComputer) return "/brand/repair-shop-laptop.svg";
-  if (hasElectronics) return "/brand/repair-shop-electronics.svg";
-  return "/brand/repair-shop-placeholder.svg";
-}
-
 export function BusinessCard({ business }: { business: Business }) {
   const location = getLocation(business.locationSlug);
   const locationName = business.locationName ?? location?.name;
@@ -48,7 +17,7 @@ export function BusinessCard({ business }: { business: Business }) {
       >
         <div className="listing-visual">
           <Image
-            src={business.image ?? getFallbackImage(business.serviceSlugs)}
+            src={business.image ?? "/brand/repair-shop-placeholder.svg"}
             alt=""
             fill
             sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"

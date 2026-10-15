@@ -45,6 +45,7 @@ function mapBusiness(row: any): Business {
     id: row.id,
     slug: row.slug,
     name: row.name,
+    image: row.image_url ?? undefined,
     tagline: row.tagline ?? "",
     description: row.description ?? "",
     locationSlug: location?.slug ?? "cebu",

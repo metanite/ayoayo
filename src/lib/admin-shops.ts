@@ -3,6 +3,7 @@ import type { BusinessHours, BusinessStatus } from "@/lib/types";
 export type ShopPayload = {
   slug: string;
   name: string;
+  imageUrl: string;
   tagline: string;
   description: string;
   locationId: string;
@@ -47,6 +48,7 @@ export function validateShopPayload(input: unknown): { data?: ShopPayload; error
     data: {
       slug: String(value.slug).trim().toLowerCase(),
       name: String(value.name).trim(),
+      imageUrl: String(value.imageUrl ?? "").trim(),
       tagline: String(value.tagline ?? "").trim(),
       description: String(value.description ?? "").trim(),
       locationId: String(value.locationId),
@@ -72,6 +74,7 @@ export function shopRow(payload: ShopPayload) {
   return {
     slug: payload.slug,
     name: payload.name,
+    image_url: payload.imageUrl || null,
     tagline: payload.tagline || null,
     description: payload.description || null,
     location_id: payload.locationId,
