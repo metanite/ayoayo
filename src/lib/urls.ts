@@ -5,7 +5,7 @@ export function locationPath(locationSlug: string) {
 }
 
 export function shopPath(locationSlug: string, shopSlug: string) {
-  return `${locationPath(locationSlug)}/tech-repair-shop/${shopSlug}`;
+  return `/${locationSlug}/tech-repair-shop/${shopSlug}`;
 }
 
 export function locationSlugFromPath(pathSlug: string) {

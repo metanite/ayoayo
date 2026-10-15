@@ -17,11 +17,32 @@ function first<T>(value: T | T[] | null | undefined): T | undefined {
   return Array.isArray(value) ? value[0] : (value ?? undefined);
 }
 
-function coordinates(value: unknown): { latitude: number; longitude: number } {
+export function parseCoordinates(value: unknown): { latitude: number; longitude: number } {
   const point = value as { coordinates?: [number, number] } | null;
+  let coordinatePair = point?.coordinates;
+
+  if (typeof value === "string") {
+    const wktMatch = value.match(/POINT\s*\(\s*(-?[\d.]+)\s+(-?[\d.]+)\s*\)/i);
+    if (wktMatch) coordinatePair = [Number(wktMatch[1]), Number(wktMatch[2])];
+
+    if (!coordinatePair && /^[0-9a-f]+$/i.test(value) && value.length >= 42) {
+      const bytes = Uint8Array.from(value.match(/.{2}/g) ?? [], (pair) => parseInt(pair, 16));
+      const view = new DataView(bytes.buffer);
+      const littleEndian = bytes[0] === 1;
+      const geometryType = view.getUint32(1, littleEndian);
+      let offset = 5;
+      if (geometryType & 0x20000000) offset += 4;
+      coordinatePair = [
+        view.getFloat64(offset, littleEndian),
+        view.getFloat64(offset + 8, littleEndian),
+      ];
+    }
+  }
+
+  const [longitude = 0, latitude = 0] = coordinatePair ?? [];
   return {
-    latitude: point?.coordinates?.[1] ?? 0,
-    longitude: point?.coordinates?.[0] ?? 0,
+    latitude: Number.isFinite(latitude) ? latitude : 0,
+    longitude: Number.isFinite(longitude) ? longitude : 0,
   };
 }
 
@@ -40,7 +61,7 @@ function mapBusiness(row: any): Business {
   const linkedServices = (row.business_services ?? [])
     .map((item: any) => ({ id: item.service_id, service: first(item.services) }))
     .filter((item: any) => item.service?.slug && !REMOVED_SERVICE_SLUGS.has(item.service.slug));
-  const point = coordinates(row.coordinates);
+  const point = parseCoordinates(row.coordinates);
   return {
     id: row.id,
     slug: row.slug,
@@ -157,7 +178,7 @@ export async function getDirectoryData(): Promise<DirectoryData> {
         type: item.type,
         parentSlug: item.parent_id ? locationById.get(item.parent_id) : undefined,
         description: item.description ?? "",
-        ...coordinates(item.coordinates),
+        ...parseCoordinates(item.coordinates),
       }));
   const categories: Category[] = categoryResult.error
     ? demoCategories

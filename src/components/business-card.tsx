@@ -6,7 +6,13 @@ import { ServiceIcon } from "@/components/service-icon";
 import { Business } from "@/lib/types";
 import { shopPath } from "@/lib/urls";
 
-export function BusinessCard({ business }: { business: Business }) {
+export function BusinessCard({
+  business,
+  showHours = true,
+}: {
+  business: Business;
+  showHours?: boolean;
+}) {
   const location = getLocation(business.locationSlug);
   const locationName = business.locationName ?? location?.name;
   return (
@@ -84,8 +90,10 @@ export function BusinessCard({ business }: { business: Business }) {
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-ink/10 pt-3 text-[13px]">
-          <span className="truncate font-normal text-ink/50">{business.hours}</span>
+        <div className="flex items-center justify-end gap-3 border-t border-ink/10 pt-3 text-[13px]">
+          {showHours && (
+            <span className="mr-auto truncate font-normal text-ink/50">{business.hours}</span>
+          )}
           <Link
             href={shopPath(business.locationSlug, business.slug) as Route}
             className="shrink-0 font-semibold text-ink transition-colors group-hover:text-coral"

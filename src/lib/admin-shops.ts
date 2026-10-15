@@ -55,9 +55,12 @@ export function validateShopPayload(input: unknown): { data?: ShopPayload; error
   const latitude = value.latitude === null || value.latitude === "" ? null : Number(value.latitude);
   const longitude =
     value.longitude === null || value.longitude === "" ? null : Number(value.longitude);
-  if (latitude !== null && !Number.isFinite(latitude))
+  if ((latitude === null) !== (longitude === null)) {
+    return { error: "Provide both latitude and longitude, or leave both blank." };
+  }
+  if (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90))
     return { error: "Latitude must be a number." };
-  if (longitude !== null && !Number.isFinite(longitude))
+  if (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))
     return { error: "Longitude must be a number." };
 
   return {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminContext } from "@/lib/admin";
 import { resolveLocationId, shopRow, validateShopPayload } from "@/lib/admin-shops";
-import { REMOVED_SERVICE_SLUGS } from "@/lib/directory";
+import { parseCoordinates, REMOVED_SERVICE_SLUGS } from "@/lib/directory";
 
 function unauthorized() {
   return NextResponse.json({ error: "Administrator access required." }, { status: 401 });
@@ -33,15 +33,18 @@ export async function GET() {
   const activeServiceIds = new Set(activeServices.map((service: any) => service.id));
 
   return NextResponse.json({
-    shops: (shopsResult.data ?? []).map((shop: any) => ({
-      ...shop,
-      location: Array.isArray(shop.locations) ? shop.locations[0] : shop.locations,
-      serviceIds: (shop.business_services ?? [])
-        .map((item: any) => item.service_id)
-        .filter((serviceId: string) => activeServiceIds.has(serviceId)),
-      latitude: shop.coordinates?.coordinates?.[1] ?? null,
-      longitude: shop.coordinates?.coordinates?.[0] ?? null,
-    })),
+    shops: (shopsResult.data ?? []).map((shop: any) => {
+      const point = shop.coordinates ? parseCoordinates(shop.coordinates) : null;
+      return {
+        ...shop,
+        location: Array.isArray(shop.locations) ? shop.locations[0] : shop.locations,
+        serviceIds: (shop.business_services ?? [])
+          .map((item: any) => item.service_id)
+          .filter((serviceId: string) => activeServiceIds.has(serviceId)),
+        latitude: point?.latitude ?? null,
+        longitude: point?.longitude ?? null,
+      };
+    }),
     services: activeServices,
     locations: locationsResult.data ?? [],
   });
